@@ -1,12 +1,20 @@
 ﻿esptool v5.3.1
-Serial port COM24:
-Note: Pre-connection option "no-reset" was selected. Connection may fail if the chip is not in bootloader or flasher stub mode.
+Serial port com23:
 Connecting...
-Connected to ESP8266 on COM24:
+Failed to get VID/PID of a device on com23, using standard reset sequence.
+
+Failed to get VID/PID of a device on com23, using standard reset sequence.
+
+Detecting chip type... ESP8266
+Connected to ESP8266 on com23:
 Chip type:          ESP8285N08
 Features:           Wi-Fi, 160MHz, Embedded Flash
 Crystal frequency:  26MHz
-MAC:                e0:98:06:c3:b3:b2
+
+Failed to get VID/PID of a device on com23, using standard reset sequence.
+
+Failed to get VID/PID of a device on com23, using standard reset sequence.
+MAC:                7c:87:ce:9f:7c:3c
 
 Stub flasher is already running. No upload is necessary.
 
@@ -17,3 +25,5 @@ Device: 4014
 Detected flash size: 1MB
 
 Hard resetting via RTS pin...
+
+Failed to get VID/PID of a device on com23, using standard reset sequence.
