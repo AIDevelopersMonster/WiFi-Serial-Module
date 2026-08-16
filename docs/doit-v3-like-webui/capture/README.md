@@ -36,16 +36,28 @@ py -m pip install esptool
 
 ## 1. Prepare paths and choose the COM port
 
-Paste this block once:
+Paste this block once. It refuses an empty COM-port value so an accidental Enter cannot shift the esptool arguments:
 
 ```powershell
-$Port = Read-Host "COM port (example: COM23)"
+do {
+    $Port = (Read-Host "COM port (example: COM24)").Trim()
+} while ([string]::IsNullOrWhiteSpace($Port))
+
 $Capture = "docs\doit-v3-like-webui\capture"
 $Backup = "local-backups\doit-v3-like-webui"
 $Dump = Join-Path $Backup "doit-v3-like_sw-v3.2.1_hd-v1.0_fullflash.bin"
 
 New-Item -ItemType Directory -Force $Capture | Out-Null
 New-Item -ItemType Directory -Force $Backup | Out-Null
+
+"Using port: $Port"
+"Dump path: $Dump"
+```
+
+If the port is already known, it is simpler and safer to assign it directly, for example:
+
+```powershell
+$Port = "COM24"
 ```
 
 The dump filename is intentionally based on the observed Web UI firmware/hardware version rather than on a temporary COM-port number. After `chip-id` identifies the actual SoC and chip ID, the local image may be renamed more specifically.
@@ -91,6 +103,28 @@ $Out | ForEach-Object { "$_" } | Set-Content -Encoding UTF8 "$Capture\read-flash
 ```
 
 Do **not** run `erase-flash`, `erase-region`, `write-flash`, or other write/erase commands during characterization.
+
+### Troubleshooting: `No such command '0'`
+
+If esptool prints:
+
+```text
+No such command '0'.
+```
+
+check the variable first:
+
+```powershell
+"Port=[$Port]"
+```
+
+An empty value means `--port` consumed the next token (`read-flash`) as its port argument, so `0` was then interpreted as the command name. Set the correct port explicitly, for example:
+
+```powershell
+$Port = "COM24"
+```
+
+and rerun the command. The failed `read-flash.txt` is harmless and will be overwritten by the successful rerun.
 
 ## 6. Save dump size and SHA-256
 
