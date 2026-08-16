@@ -62,10 +62,11 @@ The failed DOIT-specific commands are useful negative fingerprints: they disting
 ## Files
 
 - [`commands.md`](commands.md) - command inventory from the ESP8266 AT Instruction Set v1.5.4, examples, and safety classification.
+- [`usage-options.md`](usage-options.md) - practical use/reflash options: current AT firmware, transparent TCP/UDP, DOIT V3 investigation, esp-link, later AT and custom firmware.
 - [`com23-observation.md`](com23-observation.md) - the first identification session captured from the project hardware.
 - [`com23-at-audit.md`](com23-at-audit.md) - human-readable safe AT command audit from the actual COM23 module.
 - [`com23-at-audit.json`](com23-at-audit.json) - machine-readable copy of the same audit.
-- [`com23-esptool-hardware.md`](com23-esptool-hardware.md) - actual esptool hardware/ROM/Flash identification results.
+- [`com23-esptool-hardware.md`](com23-esptool-hardware.md) - actual esptool hardware/ROM/Flash identification results and private-backup hash.
 - [`hardware-capture.md`](hardware-capture.md) - read-only hardware identification and private Flash-backup procedure.
 - [`../../tools/at_command_audit.py`](../../tools/at_command_audit.py) - read-only/state-preserving command capability audit.
 
@@ -87,13 +88,11 @@ The audit intentionally does **not** execute reset, restore, sleep, Wi-Fi join/l
 
 ## Private Flash backup
 
-The remaining useful capture is a full read-only 1 MB Flash image. Keep it in the ignored `local-backups/` directory:
+A complete read-only 1 MiB Flash image has been captured locally and fingerprinted by SHA-256. Keep raw images in the ignored `local-backups/` directory; do not publish them until inspected for credentials, saved access-point data, calibration/configuration records, and other device-specific state.
 
-```powershell
-py -m esptool --port COM23 read-flash 0 ALL local-backups\COM23-full-flash.bin
-```
+## Practical next step
 
-Then record only its size and hashes in documentation. Do not publish the raw dump until it has been inspected for credentials, saved access-point data, calibration/configuration records, and other device-specific state.
+See [`usage-options.md`](usage-options.md). The recommended first experiment is a **symmetric transparent UDP pair on the existing AT firmware**, before any erase/reflash operation. A known-good DOIT V3 module can then be characterized as a donor/reference for a separate compatibility study.
 
 ## Important version boundary
 
