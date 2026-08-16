@@ -27,6 +27,26 @@ SW Version: v3.2.1
 HD Version: v1.0
 ```
 
+### Status page
+
+![DOIT V3-like status page](img/status.png)
+
+### UART settings
+
+![DOIT V3-like UART settings](img/uart-settings.png)
+
+### Wi-Fi / AP / Station settings
+
+![DOIT V3-like Wi-Fi settings](img/wifi-settings.png)
+
+### Network socket settings
+
+![DOIT V3-like network settings](img/network-settings.png)
+
+### Firmware / hardware version page
+
+![DOIT V3-like about page](img/about.png)
+
 ## Current observed status
 
 | Property | Observed value |
@@ -94,7 +114,13 @@ The same hardware can also be evaluated in UDP modes for lower-overhead transpar
 
 ## Images
 
-Screenshots of the web interface belong in [`img/`](img/).
+The captured web-interface screenshots are stored in [`img/`](img/):
+
+- [`status.png`](img/status.png)
+- [`uart-settings.png`](img/uart-settings.png)
+- [`wifi-settings.png`](img/wifi-settings.png)
+- [`network-settings.png`](img/network-settings.png)
+- [`about.png`](img/about.png)
 
 The image directory intentionally uses short stable names instead of Windows screenshot timestamps. See [`img/README.md`](img/README.md) for the naming scheme.
 
