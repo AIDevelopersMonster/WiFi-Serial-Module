@@ -16,7 +16,7 @@ py -m pip install -r requirements.txt
 python3 -m pip install -r requirements.txt
 ```
 
-`pyserial` is required for UART tools. `tcp_console.py` uses only the Python standard library.
+`pyserial` is required for UART tools. `tcp_console.py` and `flash_layout_scan.py` use only the Python standard library.
 
 ## detect_module.py
 
@@ -61,6 +61,26 @@ python3 tools/at_command_audit.py /dev/ttyUSB0 --baud 115200 --markdown at-audit
 An `ERROR_OR_STATE_DEPENDENT` result is intentionally not treated as proof that a command is absent: some commands only work in a particular Wi-Fi mode/state or do not provide a safe query form.
 
 See [`../docs/esp8266-at-v1.1-sdk1.5.4/`](../docs/esp8266-at-v1.1-sdk1.5.4/) for the firmware-specific command inventory.
+
+## flash_layout_scan.py
+
+Offline, read-only structure scanner for raw ESP8266/ESP8285 Flash images. It does not require pyserial or esptool and does not modify the file.
+
+It reports file size and SHA-256, a legacy `0xE9` image header when present, SPI mode/declared Flash size/frequency, load segments, checksum validation, non-erased 4 KiB sector runs, and selected AT/SDK marker offsets.
+
+### Windows
+
+```powershell
+py tools\flash_layout_scan.py local-backups\esp8285n08_at-1.1.0.0_sdk-1.5.4_1MiB_chip-009f7c3c_fullflash.bin
+```
+
+### Linux
+
+```bash
+python3 tools/flash_layout_scan.py local-backups/esp8285n08_at-1.1.0.0_sdk-1.5.4_1MiB_chip-009f7c3c_fullflash.bin
+```
+
+Use the same scanner on a future DOIT V3 donor image so the layouts can be compared using the same measurements.
 
 ## serial_console.py
 
