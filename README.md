@@ -28,7 +28,8 @@ The project does **not** assume that every physically similar module has the sam
 
 - [`docs/firmware-identification.md`](docs/firmware-identification.md) — decision table and tests for identifying unknown modules.
 - [`docs/doit-v3.md`](docs/doit-v3.md) — DOIT transparent V3 firmware properties and factory defaults.
-- [`docs/espressif-at-1.1.md`](docs/espressif-at-1.1.md) — observed Espressif AT 1.1.0.0 module and relevant capabilities.
+- [`docs/espressif-at-1.1.md`](docs/espressif-at-1.1.md) — initial notes on observed Espressif AT 1.1.0.0 modules.
+- [`docs/esp8266-at-v1.1-sdk1.5.4/`](docs/esp8266-at-v1.1-sdk1.5.4/) — detailed profile for the tested `ESP_XXXXXX` firmware, full v1.5.4 command inventory, examples, safety classification, and COM23 observation.
 - [`docs/pairing.md`](docs/pairing.md) — how to build a module-to-module transparent UART link.
 - [`tools/README.md`](tools/README.md) — command-line utilities and separately marked **Windows** / **Linux** examples.
 
@@ -39,11 +40,14 @@ The repository includes:
 ```text
 tools/
   detect_module.py
+  at_command_audit.py
   serial_console.py
   tcp_console.py
   uart_loopback_test.py
   latency_test.py
 ```
+
+`detect_module.py` is the quick firmware fingerprint. `at_command_audit.py` is the deeper, state-preserving command audit for the 2016 Espressif AT family.
 
 Install the UART dependency with `py -m pip install -r requirements.txt` on Windows or `python3 -m pip install -r requirements.txt` on Linux. See [`tools/README.md`](tools/README.md) for usage.
 

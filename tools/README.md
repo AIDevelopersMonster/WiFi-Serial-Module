@@ -38,6 +38,30 @@ python3 tools/detect_module.py /dev/ttyUSB0 --host 192.168.4.1
 
 The default UART probe tries 115200 and 9600 baud. It recognizes the observed Espressif AT firmware from `AT+GMR` and DOIT V3-like firmware from `AT+STASTATUS` / `AT+STAINFO` responses. Network probing checks TCP ports 23, 80, and 9000.
 
+## at_command_audit.py
+
+Safe capability audit for the project's ESP8266 AT v1.1 / NONOS SDK 1.5.4 modules. It queries read-only/state-preserving command forms and can write both Markdown and JSON reports.
+
+It deliberately does **not** execute factory reset, reboot, sleep, UART reconfiguration, Wi-Fi join/leave, Flash-writing commands, socket creation/closure, payload transmission, WPS/SmartConfig, or OTA update commands.
+
+### Windows
+
+```powershell
+py tools/at_command_audit.py COM23 --baud 115200
+py tools/at_command_audit.py COM23 --baud 115200 --markdown com23-at-audit.md --json com23-at-audit.json
+```
+
+### Linux
+
+```bash
+python3 tools/at_command_audit.py /dev/ttyUSB0 --baud 115200
+python3 tools/at_command_audit.py /dev/ttyUSB0 --baud 115200 --markdown at-audit.md --json at-audit.json
+```
+
+An `ERROR_OR_STATE_DEPENDENT` result is intentionally not treated as proof that a command is absent: some commands only work in a particular Wi-Fi mode/state or do not provide a safe query form.
+
+See [`../docs/esp8266-at-v1.1-sdk1.5.4/`](../docs/esp8266-at-v1.1-sdk1.5.4/) for the firmware-specific command inventory.
+
 ## serial_console.py
 
 Interactive serial terminal. Text mode appends CRLF by default; hexadecimal input/output is available for binary protocols.
