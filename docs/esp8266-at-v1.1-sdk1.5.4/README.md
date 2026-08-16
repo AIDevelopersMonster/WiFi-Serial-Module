@@ -51,6 +51,7 @@ Espressif announced this AT release on 20 May 2016.
 | AP IPv4 | `192.168.4.1/24` |
 | Station/base MAC | `7c:87:ce:9f:7c:3c` |
 | SoftAP MAC | `7e:87:ce:9f:7c:3c` |
+| Full Flash backup | 1 MiB, SHA-256 recorded |
 | DOIT-specific `AT+STASTATUS` | `ERROR` |
 | DOIT-specific `AT+STAINFO` | `ERROR` |
 | DOIT web UI at 192.168.4.1 | Not expected from this firmware family |
@@ -63,12 +64,14 @@ The failed DOIT-specific commands are useful negative fingerprints: they disting
 
 - [`commands.md`](commands.md) - command inventory from the ESP8266 AT Instruction Set v1.5.4, examples, and safety classification.
 - [`usage-options.md`](usage-options.md) - practical use/reflash options: current AT firmware, transparent TCP/UDP, DOIT V3 investigation, esp-link, later AT and custom firmware.
+- [`flash-layout.md`](flash-layout.md) - offline structural analysis of the preserved 1 MiB full-Flash image and comparison framework for a future DOIT V3 donor.
 - [`com23-observation.md`](com23-observation.md) - the first identification session captured from the project hardware.
 - [`com23-at-audit.md`](com23-at-audit.md) - human-readable safe AT command audit from the actual COM23 module.
 - [`com23-at-audit.json`](com23-at-audit.json) - machine-readable copy of the same audit.
 - [`com23-esptool-hardware.md`](com23-esptool-hardware.md) - actual esptool hardware/ROM/Flash identification results and private-backup hash.
 - [`hardware-capture.md`](hardware-capture.md) - read-only hardware identification and private Flash-backup procedure.
 - [`../../tools/at_command_audit.py`](../../tools/at_command_audit.py) - read-only/state-preserving command capability audit.
+- [`../../tools/flash_layout_scan.py`](../../tools/flash_layout_scan.py) - offline, read-only raw-Flash structure scanner.
 
 ## Safe command audit
 
@@ -90,9 +93,17 @@ The audit intentionally does **not** execute reset, restore, sleep, Wi-Fi join/l
 
 A complete read-only 1 MiB Flash image has been captured locally and fingerprinted by SHA-256. Keep raw images in the ignored `local-backups/` directory; do not publish them until inspected for credentials, saved access-point data, calibration/configuration records, and other device-specific state.
 
+Recommended stable local filename:
+
+```text
+esp8285n08_at-1.1.0.0_sdk-1.5.4_1MiB_chip-009f7c3c_fullflash.bin
+```
+
+The offline analysis is documented in [`flash-layout.md`](flash-layout.md).
+
 ## Practical next step
 
-See [`usage-options.md`](usage-options.md). The recommended first experiment is a **symmetric transparent UDP pair on the existing AT firmware**, before any erase/reflash operation. A known-good DOIT V3 module can then be characterized as a donor/reference for a separate compatibility study.
+See [`usage-options.md`](usage-options.md). The recommended first experiment is a **symmetric transparent UDP pair on the existing AT firmware**, before any erase/reflash operation. A known-good DOIT V3 module can then be characterized as a donor/reference for a separate compatibility study and scanned using the same `flash_layout_scan.py` tool.
 
 ## Important version boundary
 
@@ -102,5 +113,5 @@ Do not use a modern ESP-AT command list as if every command existed in this 2016
 
 - Espressif release announcement: `ESP8266_AT_v1.1 Release based on ESP8266_NONOS_SDK_V1.5.4`, 20 May 2016.
 - Espressif `ESP8266 AT Instruction Set`, Version 1.5.4, May 2016.
-- Current Espressif esptool documentation for ESP8266 ROM bootloader and read-only chip/flash operations.
+- Current Espressif esptool documentation for ESP8266 ROM bootloader and read-only chip/Flash operations.
 - Current Espressif AT Command Set Comparison is useful only as a migration cross-check between old NONOS-AT and newer ESP-AT.
