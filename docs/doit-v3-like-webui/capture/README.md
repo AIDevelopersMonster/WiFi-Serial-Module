@@ -4,6 +4,23 @@ This directory is for **public, text-only characterization results** from the DO
 
 Raw Flash images must stay outside `docs/`, under the ignored `local-backups/` tree. The repository root `.gitignore` already excludes both `local-backups/` and `*.bin`.
 
+## Verified hardware for this specimen
+
+The module has now been identified through the ESP ROM bootloader as:
+
+```text
+Chip type: ESP8285N08
+Features: Wi-Fi, 160MHz, Embedded Flash
+Crystal frequency: 26MHz
+MAC: e0:98:06:c3:b3:b2
+Chip ID: 0x00c3b3b2
+Flash manufacturer: 51
+Flash device: 4014
+Detected flash size: 1MB
+```
+
+The Web UI MAC `E0-98-06-C3-B3-B2` matches the ROM/base MAC exactly.
+
 ## Storage layout
 
 ```text
@@ -18,7 +35,7 @@ docs/doit-v3-like-webui/capture/
     layout-compare.txt
 
 local-backups/doit-v3-like-webui/
-    doit-v3-like_sw-v3.2.1_hd-v1.0_fullflash.bin
+    esp8285n08_doit-v3-like_sw-v3.2.1_hd-v1.0_1MiB_chip-00c3b3b2_fullflash.bin
 ```
 
 Only the `docs/.../capture/*.txt` files should be committed. The `.bin` file remains local.
@@ -26,7 +43,7 @@ Only the `docs/.../capture/*.txt` files should be committed. The `.bin` file rem
 ## Before starting
 
 1. Close MobaXterm, serial terminals, and any program holding the COM port.
-2. Put the module into the ESP ROM serial bootloader (GPIO0 low during reset).
+2. **Enter ESP ROM programming/download mode before running esptool.** On the tested setup, the correct COM port alone was not enough; normal firmware mode produced `No serial data received`.
 3. Run the commands from the repository root in Windows PowerShell.
 4. If necessary, install esptool first:
 
@@ -34,18 +51,15 @@ Only the `docs/.../capture/*.txt` files should be committed. The `.bin` file rem
 py -m pip install esptool
 ```
 
-## 1. Prepare paths and choose the COM port
+## 1. Prepare paths and COM port
 
-Paste this block once. It refuses an empty COM-port value so an accidental Enter cannot shift the esptool arguments:
+For the currently tested unit:
 
 ```powershell
-do {
-    $Port = (Read-Host "COM port (example: COM24)").Trim()
-} while ([string]::IsNullOrWhiteSpace($Port))
-
+$Port = "COM24"
 $Capture = "docs\doit-v3-like-webui\capture"
 $Backup = "local-backups\doit-v3-like-webui"
-$Dump = Join-Path $Backup "doit-v3-like_sw-v3.2.1_hd-v1.0_fullflash.bin"
+$Dump = Join-Path $Backup "esp8285n08_doit-v3-like_sw-v3.2.1_hd-v1.0_1MiB_chip-00c3b3b2_fullflash.bin"
 
 New-Item -ItemType Directory -Force $Capture | Out-Null
 New-Item -ItemType Directory -Force $Backup | Out-Null
@@ -54,77 +68,43 @@ New-Item -ItemType Directory -Force $Backup | Out-Null
 "Dump path: $Dump"
 ```
 
-If the port is already known, it is simpler and safer to assign it directly, for example:
-
-```powershell
-$Port = "COM24"
-```
-
-The dump filename is intentionally based on the observed Web UI firmware/hardware version rather than on a temporary COM-port number. After `chip-id` identifies the actual SoC and chip ID, the local image may be renamed more specifically.
-
 ## 2. Capture chip ID
 
+Because the module is already in ROM bootloader mode, use `--before no-reset`:
+
 ```powershell
-$Out = py -m esptool --port $Port chip-id 2>&1
+$Out = py -m esptool --chip esp8266 --port $Port --before no-reset chip-id 2>&1
 $Out
 $Out | ForEach-Object { "$_" } | Set-Content -Encoding UTF8 "$Capture\chip-id.txt"
 ```
 
-Expected information includes the detected chip type, features, crystal frequency, MAC address, and chip ID.
-
 ## 3. Capture MAC
 
 ```powershell
-$Out = py -m esptool --port $Port read-mac 2>&1
+$Out = py -m esptool --chip esp8266 --port $Port --before no-reset read-mac 2>&1
 $Out
 $Out | ForEach-Object { "$_" } | Set-Content -Encoding UTF8 "$Capture\read-mac.txt"
 ```
 
-The ROM-reported MAC can then be compared with the Web UI value currently shown as `E0-98-06-C3-B3-B2`.
-
 ## 4. Capture Flash identification
 
 ```powershell
-$Out = py -m esptool --port $Port flash-id 2>&1
+$Out = py -m esptool --chip esp8266 --port $Port --before no-reset flash-id 2>&1
 $Out
 $Out | ForEach-Object { "$_" } | Set-Content -Encoding UTF8 "$Capture\flash-id.txt"
 ```
-
-Record the reported Flash manufacturer, device ID, and detected capacity before making the full backup.
 
 ## 5. Read the complete Flash image
 
 This is a read-only operation:
 
 ```powershell
-$Out = py -m esptool --port $Port read-flash 0 ALL $Dump 2>&1
+$Out = py -m esptool --chip esp8266 --port $Port --before no-reset read-flash 0 ALL $Dump 2>&1
 $Out
 $Out | ForEach-Object { "$_" } | Set-Content -Encoding UTF8 "$Capture\read-flash.txt"
 ```
 
 Do **not** run `erase-flash`, `erase-region`, `write-flash`, or other write/erase commands during characterization.
-
-### Troubleshooting: `No such command '0'`
-
-If esptool prints:
-
-```text
-No such command '0'.
-```
-
-check the variable first:
-
-```powershell
-"Port=[$Port]"
-```
-
-An empty value means `--port` consumed the next token (`read-flash`) as its port argument, so `0` was then interpreted as the command name. Set the correct port explicitly, for example:
-
-```powershell
-$Port = "COM24"
-```
-
-and rerun the command. The failed `read-flash.txt` is harmless and will be overwritten by the successful rerun.
 
 ## 6. Save dump size and SHA-256
 
@@ -137,6 +117,10 @@ $Metadata = @(
     "Firmware profile: DOIT V3-like Web UI"
     "Observed SW version: v3.2.1"
     "Observed HD version: v1.0"
+    "SoC: ESP8285N08"
+    "Chip ID: 0x00c3b3b2"
+    "MAC: e0:98:06:c3:b3:b2"
+    "Detected Flash: 1 MiB"
     "Dump filename: $([System.IO.Path]::GetFileName($Dump))"
     "Size: $Size bytes"
     "SHA256: $Sha256"
@@ -147,11 +131,7 @@ $Metadata
 $Metadata | Set-Content -Encoding UTF8 "$Capture\fullflash-metadata.txt"
 ```
 
-The public metadata deliberately records only the filename, size, hash, and profile information, not a local absolute path or Windows username.
-
 ## 7. Scan the DOIT-like Flash layout
-
-The repository already contains the read-only scanner `tools/flash_layout_scan.py`:
 
 ```powershell
 $Out = py tools\flash_layout_scan.py $Dump 2>&1
@@ -159,29 +139,31 @@ $Out
 $Out | ForEach-Object { "$_" } | Set-Content -Encoding UTF8 "$Capture\flash-layout.txt"
 ```
 
-This records the image hash, legacy ESP image header when present, segment/checksum information, non-erased 4 KiB ranges, and selected firmware markers.
-
 ## 8. Generate the same report for the known ESP8285N08 AT 1.1 reference
 
-The previously characterized reference image has chip ID `0x009f7c3c` and SHA-256:
+Reference identity:
 
 ```text
-8079DFAB4D1933A9B7B43BC6D29CCDE5A993DF2C51F4430A88037621BF0BBDD9
+ESP8285N08
+Chip ID: 0x009f7c3c
+MAC: 7c:87:ce:9f:7c:3c
+Flash: 1 MiB
+SHA256: 8079DFAB4D1933A9B7B43BC6D29CCDE5A993DF2C51F4430A88037621BF0BBDD9
 ```
 
-If the local file was renamed to the recommended stable name, set:
+If the local reference dump was renamed to the recommended stable name:
 
 ```powershell
 $AtDump = "local-backups\esp8285n08_at-1.1.0.0_sdk-1.5.4_1MiB_chip-009f7c3c_fullflash.bin"
 ```
 
-If it still has the original temporary name, use instead:
+If it still has the original temporary name:
 
 ```powershell
 $AtDump = "local-backups\COM23-full-flash.bin"
 ```
 
-Then run:
+Then:
 
 ```powershell
 $Out = py tools\flash_layout_scan.py $AtDump 2>&1
@@ -201,31 +183,18 @@ $CompareText
 $CompareText | Set-Content -Encoding UTF8 "$Capture\layout-compare.txt"
 ```
 
-`Compare-Object` is only a first text-level comparison of the scanner reports. Once the new raw dump is available, a deeper sector-by-sector comparison should be performed before considering any firmware transplant.
+`Compare-Object` is only a first text-level comparison of scanner reports. A deeper sector-by-sector comparison should follow before any firmware transplant experiment.
 
 ## 10. Verify what Git will publish
 
 ```powershell
 git status --short
-```
-
-The expected new tracked candidates are text files under:
-
-```text
-docs/doit-v3-like-webui/capture/
-```
-
-The raw image under `local-backups/` should **not** appear as an untracked file because it is ignored.
-
-To verify explicitly:
-
-```powershell
 git check-ignore -v $Dump
 ```
 
-## 11. Commit the public capture results
+The raw image should be ignored; only text results under `docs/doit-v3-like-webui/capture/` should be candidates for commit.
 
-After checking the files:
+## 11. Commit the public capture results
 
 ```powershell
 git add docs\doit-v3-like-webui\capture
@@ -235,19 +204,3 @@ git push
 ```
 
 Do not use `git add -f` on the raw `.bin` image.
-
-## What to send back for analysis
-
-Once the capture is complete, the most useful files are:
-
-```text
-chip-id.txt
-read-mac.txt
-flash-id.txt
-fullflash-metadata.txt
-flash-layout.txt
-at-1.1-reference-layout.txt
-layout-compare.txt
-```
-
-With these committed, the module can be compared against the known ESP8285N08 / AT 1.1 / NONOS SDK 1.5.4 reference without publishing either device's raw Flash contents.
