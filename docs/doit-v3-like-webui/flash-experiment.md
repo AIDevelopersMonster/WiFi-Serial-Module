@@ -39,20 +39,41 @@ Match: True
 
 This establishes that the exact intended candidate image was physically programmed and read back without a detected byte difference before the first normal boot.
 
+## Verified first normal boot
+
+The target was then booted normally and the DOIT-style Web UI became operational.
+
+Observed Status page values:
+
+```text
+Mac Address:         7C-87-CE-9F-7C-3C
+Station IP Address:  0.0.0.0
+Wi-Fi Status:        un known
+SoftAP IP address:   192.168.4.1
+System Running Time: 0 days 00:01:17   (at screenshot capture)
+```
+
+The page also rendered the expected DOIT-branded navigation and footer.
+
+Most importantly, the Web UI reports the **target** identity `7C-87-CE-9F-7C-3C`, not the donor identity `E0-98-06-C3-B3-B2`. This confirms that the transplant did not leave the donor's application-level MAC identity in the running configuration.
+
+The accessible Web UI at `192.168.4.1` also demonstrates that the target successfully reached normal firmware execution and brought up the SoftAP/HTTP path after starting with blanked RF-calibration and SDK-parameter sectors.
+
 Status at this point:
 
 ```text
 WRITE_COMPLETED: YES
 FULL_PREBOOT_READBACK: YES
 PREBOOT_BINARY_MATCH: YES
-FIRST_NORMAL_BOOT: PENDING
+FIRST_NORMAL_BOOT: YES
+SOFTAP_OPERATIONAL: YES
+HTTP_WEB_UI_OPERATIONAL: YES
+TARGET_MAC_IN_WEB_UI: YES
 ```
 
-## CRITICAL: use the target port, not the donor port
+## Target identity
 
-The DOIT-like donor was captured on `COM24`. The characterized AT target was previously on `COM23`. Do **not** reuse a donor-port variable for recovery or post-boot work.
-
-The target identity is:
+The converted target is:
 
 ```text
 Chip type: ESP8285N08
@@ -60,30 +81,22 @@ MAC:       7c:87:ce:9f:7c:3c
 Chip ID:   0x009f7c3c
 ```
 
-## First normal boot
+The original DOIT-like donor used for analysis was a different ESP8285N08 specimen with MAC `e0:98:06:c3:b3:b2` and chip ID `0x00c3b3b2`.
 
-After the verified matching read-back:
+## Remaining functional checks
 
-1. remove the GPIO0/programming-mode condition;
-2. reset or power-cycle normally;
-3. allow the first boot to initialize RF calibration and SDK parameter state.
+The conversion has booted successfully, but these items should still be checked explicitly before calling the UART-over-Wi-Fi use case complete:
 
-The full 1 MiB SHA-256 is expected to change after normal boot because `0xFB000-0xFFFFF` is mutable SDK state.
-
-Initial checks:
-
-1. Look for a Wi-Fi AP.
-2. Record the exact AP SSID that appears; do not assume whether the firmware uses the plain `Doit_WiFi` name or regenerates a MAC-derived suffix.
-3. Connect to the AP and check `192.168.4.1`.
-4. Open the Web UI and confirm `SW Version v3.2.1 / HD Version v1.0`.
-5. Record the MAC displayed by the Web UI. For this target, the expected application identity is `7C-87-CE-9F-7C-3C`, not donor `E0-98-06-C3-B3-B2`.
-6. Confirm the visible UART configuration: 9600, 8 data bits, no parity, 1 stop bit, 50 ms serial split timeout.
-7. Confirm TCP Server mode and local port 9000.
-8. Test TCP Server port 9000 only after the Web UI is responsive.
+1. Confirm the exact SoftAP SSID generated on the converted target.
+2. Confirm the Web UI `MORE` page reports `SW Version v3.2.1 / HD Version v1.0`.
+3. Confirm UART settings: 9600 baud, 8 data bits, no parity, 1 stop bit, 50 ms split timeout.
+4. Confirm network mode is TCP Server with local port 9000.
+5. Connect to TCP port 9000 and verify bidirectional UART data.
+6. Reboot/power-cycle several times and confirm configuration persistence and reliable Wi-Fi startup.
 
 ## Post-boot capture
 
-After successful first boot, return the target to programming mode and capture its newly generated state:
+After the successful first boot, return the target to programming mode and capture its newly generated RF/SDK state:
 
 ```powershell
 $PostBoot = "local-backups\doit-v3-like-webui\target-chip-009f7c3c_after-first-boot.bin"
@@ -99,11 +112,11 @@ Also record its hash:
 (Get-FileHash $PostBoot -Algorithm SHA256).Hash
 ```
 
-The post-boot image should differ from the candidate in mutable RF/SDK state. It should be analyzed before the conversion is declared fully characterized.
+The post-boot image is expected to differ from the candidate because the RTOS SDK has now had an opportunity to create target-specific RF calibration and system parameters. This comparison is the next structural validation step.
 
 ## Rollback
 
-If the candidate does not boot correctly, put the target back into ROM programming mode and verify the target MAC/chip ID again. Then restore the fresh rollback image:
+A fresh pre-transplant AT backup remains the rollback path. If later functional testing exposes a problem, place the target back into ROM programming mode and restore that image:
 
 ```powershell
 py -m esptool `
@@ -114,22 +127,7 @@ py -m esptool `
   write-flash 0x000000 $Rollback
 ```
 
-Read it back before normal boot:
-
-```powershell
-$RollbackVerify = "local-backups\rollback_verify.bin"
-
-py -m esptool --chip esp8266 --port $TargetPort --before no-reset --after no-reset read-flash 0 ALL $RollbackVerify
-
-$RollbackHash = (Get-FileHash $Rollback -Algorithm SHA256).Hash
-$RollbackVerifyHash = (Get-FileHash $RollbackVerify -Algorithm SHA256).Hash
-
-"Rollback: $RollbackHash"
-"Read-back: $RollbackVerifyHash"
-"Match: $($RollbackHash -eq $RollbackVerifyHash)"
-```
-
-Require `Match: True`, then remove programming mode and normal-boot the restored AT firmware.
+Read it back before normal boot and require an exact hash match.
 
 ## Experiment status
 
@@ -140,9 +138,13 @@ TARGET_PAYLOAD_MATCH: YES
 ROLLBACK_AVAILABLE: YES
 WRITE_TESTED_ON_TARGET: YES
 PREBOOT_READBACK_MATCH: YES
-FIRST_BOOT_TESTED: NO
-WEB_UI_TESTED: NO
-TCP_SERVER_TESTED: NO
+FIRST_BOOT_TESTED: YES
+SOFTAP_TESTED: YES
+WEB_UI_TESTED: YES
+TARGET_IDENTITY_PRESERVED: YES
+TCP_SERVER_TESTED: PENDING
+UART_DATA_PATH_TESTED: PENDING
+POST_BOOT_FLASH_ANALYZED: PENDING
 ```
 
-The write stage is now verified. Functional compatibility is established only after normal boot, RF/Wi-Fi initialization, Web UI operation, target identity validation, and UART/TCP behavior tests.
+The central transplant hypothesis is now experimentally supported: the DOIT V3-like SW v3.2.1 firmware can boot and expose its Web UI on the previously characterized ESP8285N08 AT 1.1 hardware after donor-specific state is sanitized.
