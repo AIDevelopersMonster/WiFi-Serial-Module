@@ -2,9 +2,22 @@
 
 This folder documents the `ESP_XXXXXX` Wi-Fi serial modules observed in this project that answer standard Espressif AT commands at 115200 baud.
 
-## Identified firmware
+## Identified hardware and firmware
 
-Observed on project hardware (Windows `COM23`):
+The tested project module (`COM23`, SSID `ESP_9F7C3C`) is now identified as:
+
+- SoC: **ESP8285N08**
+- integrated Flash: **1 MB**
+- crystal: **26 MHz**
+- chip ID: `0x009f7c3c`
+- base/station MAC: `7c:87:ce:9f:7c:3c`
+- SoftAP MAC: `7e:87:ce:9f:7c:3c`
+- AT firmware: **1.1.0.0**
+- SDK: **ESP8266 NONOS SDK 1.5.4**
+- firmware compile time: **May 20 2016 15:08:19**
+- UART: **115200 baud** on the tested module
+
+Observed AT identification:
 
 ```text
 AT
@@ -18,14 +31,17 @@ compile time:May 20 2016 15:08:19
 OK
 ```
 
-This identifies the firmware generation as **Espressif ESP8266 AT v1.1 based on ESP8266 NONOS SDK v1.5.4**.
-
-Espressif announced this release on 20 May 2016. The release notes mention optimization of Flash writes and DHCP server behavior, and an update to `AT+SAVETRANSLINK` so that a domain name can be saved.
+Espressif announced this AT release on 20 May 2016.
 
 ## Current project fingerprint
 
 | Property | Observed / documented |
 |---|---|
+| Chip type | `ESP8285N08` |
+| Features | Wi-Fi, 160 MHz, embedded Flash |
+| Crystal | 26 MHz |
+| Integrated Flash | 1 MB |
+| Chip ID | `0x009f7c3c` |
 | AP SSID pattern | `ESP_XXXXXX` on the tested modules |
 | Tested SSID | `ESP_9F7C3C` |
 | UART | 115200 baud on the tested module |
@@ -33,7 +49,7 @@ Espressif announced this release on 20 May 2016. The release notes mention optim
 | Version query | `AT+GMR` -> AT 1.1.0.0 / SDK 1.5.4 |
 | Wi-Fi mode | SoftAP (`CWMODE=2`) |
 | AP IPv4 | `192.168.4.1/24` |
-| Station MAC | `7c:87:ce:9f:7c:3c` |
+| Station/base MAC | `7c:87:ce:9f:7c:3c` |
 | SoftAP MAC | `7e:87:ce:9f:7c:3c` |
 | DOIT-specific `AT+STASTATUS` | `ERROR` |
 | DOIT-specific `AT+STAINFO` | `ERROR` |
@@ -49,7 +65,8 @@ The failed DOIT-specific commands are useful negative fingerprints: they disting
 - [`com23-observation.md`](com23-observation.md) - the first identification session captured from the project hardware.
 - [`com23-at-audit.md`](com23-at-audit.md) - human-readable safe AT command audit from the actual COM23 module.
 - [`com23-at-audit.json`](com23-at-audit.json) - machine-readable copy of the same audit.
-- [`hardware-capture.md`](hardware-capture.md) - next step: SoC/chip ID, MAC, SPI flash identification and private full-flash backup using Espressif esptool.
+- [`com23-esptool-hardware.md`](com23-esptool-hardware.md) - actual esptool hardware/ROM/Flash identification results.
+- [`hardware-capture.md`](hardware-capture.md) - read-only hardware identification and private Flash-backup procedure.
 - [`../../tools/at_command_audit.py`](../../tools/at_command_audit.py) - read-only/state-preserving command capability audit.
 
 ## Safe command audit
@@ -68,21 +85,19 @@ python3 tools/at_command_audit.py /dev/ttyUSB0 --baud 115200 --markdown at-audit
 
 The audit intentionally does **not** execute reset, restore, sleep, Wi-Fi join/leave, UART reconfiguration, Flash-writing commands, socket creation/closure, data transmission, WPS/SmartConfig, or OTA update commands.
 
-## Next hardware characterization step
+## Private Flash backup
 
-AT commands have identified the firmware family but not the exact SoC/flash implementation. The next read-only stage uses Espressif `esptool` in ROM download mode:
+The remaining useful capture is a full read-only 1 MB Flash image. Keep it in the ignored `local-backups/` directory:
 
 ```powershell
-py -m esptool --port COM23 chip-id
-py -m esptool --port COM23 read-mac
-py -m esptool --port COM23 flash-id
+py -m esptool --port COM23 read-flash 0 ALL local-backups\COM23-full-flash.bin
 ```
 
-See [`hardware-capture.md`](hardware-capture.md) before running these commands. A complete flash backup can also be read without erasing the module, but the raw binary should remain private until checked for saved credentials and configuration.
+Then record only its size and hashes in documentation. Do not publish the raw dump until it has been inspected for credentials, saved access-point data, calibration/configuration records, and other device-specific state.
 
 ## Important version boundary
 
-Do not use a modern ESP-AT command list as if every command existed in this 2016 firmware. For example, commands introduced in later NONOS/ESP-AT builds may return `ERROR`. The project uses the 2016 **ESP8266 AT Instruction Set v1.5.4** as the primary command reference for this module profile.
+Do not use a modern ESP-AT command list as if every command existed in this 2016 firmware. Commands introduced in later NONOS/ESP-AT builds may return `ERROR`. The project uses the 2016 **ESP8266 AT Instruction Set v1.5.4** as the primary command reference for this module profile.
 
 ## Sources
 
