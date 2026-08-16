@@ -16,7 +16,7 @@ py -m pip install -r requirements.txt
 python3 -m pip install -r requirements.txt
 ```
 
-`pyserial` is required for UART tools. `tcp_console.py` and `flash_layout_scan.py` use only the Python standard library.
+`pyserial` is required for UART tools. `tcp_console.py`, `flash_layout_scan.py`, and `build_doit_transplant_image.py` use only the Python standard library.
 
 ## detect_module.py
 
@@ -80,7 +80,45 @@ py tools\flash_layout_scan.py local-backups\esp8285n08_at-1.1.0.0_sdk-1.5.4_1MiB
 python3 tools/flash_layout_scan.py local-backups/esp8285n08_at-1.1.0.0_sdk-1.5.4_1MiB_chip-009f7c3c_fullflash.bin
 ```
 
-Use the same scanner on a future DOIT V3 donor image so the layouts can be compared using the same measurements.
+Use the same scanner on the DOIT V3-like donor and generated candidate images so their layouts can be compared using the same measurements.
+
+## build_doit_transplant_image.py
+
+Offline candidate-image builder for the characterized DOIT V3-like SW v3.2.1 firmware. It **never communicates with or writes to a device**.
+
+The tool is intentionally conservative and specific to the captured donor SHA-256. It:
+
+- validates donor size, hash and DOIT firmware markers;
+- verifies the donor's RTOS SDK v1.5.0 RF init data;
+- replaces the donor MAC copies in the DOIT application identity sector with the target MAC;
+- erases donor RF calibration at `0xFB000`;
+- preserves only the verified 128-byte generic Espressif RF init data at `0xFC000`;
+- erases donor SDK parameter sectors `0xFD000-0xFFFFF`;
+- verifies that donor MAC/suffix data no longer remains in the generated candidate.
+
+Generated `.bin` files remain local/private and are covered by the repository's `*.bin` / `local-backups/` ignore policy.
+
+### Windows — characterized donor to AT reference target
+
+```powershell
+$Donor = "local-backups\doit-v3-like-webui\esp8285n08_doit-v3-like_sw-v3.2.1_hd-v1.0_1MiB_chip-00c3b3b2_fullflash.bin"
+$TargetBackup = "local-backups\esp8285n08_at-1.1.0.0_sdk-1.5.4_1MiB_chip-009f7c3c_fullflash.bin"
+$Candidate = "local-backups\doit-v3-like-webui\esp8285n08_doit-v3-like_sw-v3.2.1_target-chip-009f7c3c_candidate.bin"
+
+py tools\build_doit_transplant_image.py `
+  $Donor `
+  --target-backup $TargetBackup `
+  --target-mac 7c:87:ce:9f:7c:3c `
+  --output $Candidate
+```
+
+For the exact donor and target characterized in this repository, the expected candidate hash is:
+
+```text
+C1090E484F2EF71630E67B269868320D50095236D8892540A53B17847326FE56
+```
+
+See [`../docs/doit-v3-like-webui/transplant-plan.md`](../docs/doit-v3-like-webui/transplant-plan.md) before any device write experiment.
 
 ## serial_console.py
 
