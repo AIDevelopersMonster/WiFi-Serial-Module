@@ -1,12 +1,29 @@
 # DOIT V3-like Web UI module profile
 
-This folder is for a second WiFi Serial Module variant that behaves much more like the documented DOIT transparent-transmission firmware than the previously characterized Espressif AT 1.1 module.
+This folder documents a second WiFi Serial Module variant that behaves much more like the documented DOIT transparent-transmission firmware than the previously characterized Espressif AT 1.1 module.
 
-**Authenticity is not yet established.** The module presents a DOIT-branded web interface and a working TCP Server mode, but it should be treated as **DOIT V3-like / compatible behavior** until its SoC, flash, firmware image and hardware identity are captured independently.
+**Authenticity as an original DOIT-manufactured unit is not established**, but the firmware identity is now directly confirmed in the captured binary and the hardware has been independently identified through the ESP ROM bootloader.
 
-## Observed web interface
+## Verified hardware identity
 
-The current screenshots show a three-tab interface:
+The module is:
+
+```text
+ESP8285N08
+26 MHz crystal
+Embedded 1 MiB Flash
+Flash manufacturer/device: 51 / 4014
+MAC: e0:98:06:c3:b3:b2
+Chip ID: 0x00c3b3b2
+```
+
+The ROM-reported MAC exactly matches the Web UI MAC.
+
+See [`hardware-identification.md`](hardware-identification.md).
+
+## Observed Web UI
+
+The screenshots show a three-tab interface:
 
 - `STATUS`
 - `MODULE`
@@ -51,7 +68,7 @@ HD Version: v1.0
 
 | Property | Observed value |
 |---|---|
-| MAC address shown by web UI | `E0-98-06-C3-B3-B2` |
+| MAC address shown by Web UI | `E0-98-06-C3-B3-B2` |
 | Station IP | `0.0.0.0` |
 | Wi-Fi Status | `un known` |
 | SoftAP IP | `192.168.4.1` |
@@ -71,11 +88,9 @@ HD Version: v1.0
 | Stop bits | `1` |
 | Serial split timeout | `50 ms` |
 
-This matches the practical configuration expected for a transparent UART/Wi-Fi bridge.
-
 ## Network modes exposed by the UI
 
-The `Networks` page exposes at least these socket roles:
+The `Networks` page exposes at least:
 
 - TCP Server
 - TCP Client
@@ -90,11 +105,71 @@ Socket Type: TCP Server
 TCP Server Local Port: 9000
 ```
 
-This is especially important for the project because the server mode is actually working on this unit, unlike the architectural limitation encountered with the legacy Espressif AT 1.1 transparent TCP path.
+The server mode is observed working on this unit, which makes this firmware especially relevant to the project's direct wireless-UART pair topology.
+
+## Firmware identity from the full Flash dump
+
+A complete 1 MiB dump was captured and analyzed offline:
+
+```text
+SHA256: 81860AA052ECF5B888C6E128F2C4D15AC5DA1990DD69E45732F963B234EAB541
+```
+
+The binary contains direct identity markers including:
+
+```text
+Doit_Ser2Sock_3.2.1_20171229
+Doit_WiFi_TTL_V2.0
+SW Version: v3.2.1 HD Version:v1.0
+AT+STASTATUS
+AT+STAINFO
+AT+TCPCLIENT
+```
+
+It also identifies its SDK lineage as ESP8266 **RTOS SDK 1.5.0-dev era**, not NONOS.
+
+See [`flash-analysis.md`](flash-analysis.md).
+
+## Relationship to the ESP8285N08 AT 1.1 specimen
+
+Both characterized modules share:
+
+```text
+ESP8285N08
+26 MHz crystal
+Embedded 1 MiB Flash
+Flash IDs 51 / 4014
+DOUT image mode
+40 MHz SPI Flash header frequency
+```
+
+The AT reference uses NONOS SDK 1.5.4 and its main flash-mapped application starts at `0x010000`.
+
+The DOIT V3-like image uses an RTOS SDK 1.5.0-era application and its main flash-mapped region starts at `0x020000`.
+
+This is strong evidence that the major functional difference is firmware/software architecture rather than a different ESP SoC or Flash class.
+
+## Transplant research
+
+A raw 1 MiB donor clone is deliberately rejected because the captured image contains donor-specific MAC, RF calibration and SDK/Wi-Fi state.
+
+The repository now includes a read-only/offline candidate builder:
+
+[`tools/build_doit_transplant_image.py`](../../tools/build_doit_transplant_image.py)
+
+For the characterized target ESP8285N08 (`MAC 7c:87:ce:9f:7c:3c`, chip ID `0x009f7c3c`), the sanitized candidate can be built reproducibly with expected SHA-256:
+
+```text
+C1090E484F2EF71630E67B269868320D50095236D8892540A53B17847326FE56
+```
+
+The candidate has **not yet been boot-tested on the target**.
+
+See [`transplant-plan.md`](transplant-plan.md) for the reversible write, first-boot, post-boot-capture and rollback procedure.
 
 ## Project significance
 
-This module is currently the strongest candidate for the intended direct replacement topology:
+The intended topology remains:
 
 ```text
 Device A UART
@@ -110,11 +185,11 @@ STA + TCP Client
 Device B UART
 ```
 
-The same hardware can also be evaluated in UDP modes for lower-overhead transparent transport.
+If the controlled transplant succeeds, the already-owned ESP8285N08 AT modules may be convertible to the more useful DOIT-style TCP Server/Client firmware behavior without changing the underlying SoC/Flash hardware class.
 
 ## Images
 
-The captured web-interface screenshots are stored in [`img/`](img/):
+The captured Web-interface screenshots are stored in [`img/`](img/):
 
 - [`status.png`](img/status.png)
 - [`uart-settings.png`](img/uart-settings.png)
@@ -122,18 +197,10 @@ The captured web-interface screenshots are stored in [`img/`](img/):
 - [`network-settings.png`](img/network-settings.png)
 - [`about.png`](img/about.png)
 
-The image directory intentionally uses short stable names instead of Windows screenshot timestamps. See [`img/README.md`](img/README.md) for the naming scheme.
+See [`img/README.md`](img/README.md) for the naming scheme.
 
-## Next characterization steps
+## Capture procedure
 
-Before calling this an original DOIT module or using its firmware as a donor image, capture the same hardware evidence used for the ESP8285N08 AT module:
+Commands for reproducing the hardware identification, Flash backup, hashes and scanner reports are in:
 
-```powershell
-py -m esptool --port COMxx chip-id
-py -m esptool --port COMxx read-mac
-py -m esptool --port COMxx flash-id
-```
-
-Then make a private full-flash backup and record only its size and SHA-256 in Git until the dump has been inspected for credentials and device-specific configuration.
-
-Once that is done, compare the resulting image with the existing AT 1.1 dump using `tools/flash_layout_scan.py`.
+[`capture/README.md`](capture/README.md)
