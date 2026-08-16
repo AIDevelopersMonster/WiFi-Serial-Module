@@ -25,32 +25,34 @@ Size:   1048576 bytes
 SHA256: C1090E484F2EF71630E67B269868320D50095236D8892540A53B17847326FE56
 ```
 
-Verify immediately before writing:
+## Verified write result
 
-```powershell
-(Get-Item $Candidate).Length
-(Get-FileHash $Candidate -Algorithm SHA256).Hash
+The complete 1 MiB sanitized candidate was written to the characterized AT target while it remained in ROM programming mode. A complete pre-boot read-back was then captured.
+
+Observed hashes:
+
+```text
+Candidate: C1090E484F2EF71630E67B269868320D50095236D8892540A53B17847326FE56
+Read-back: C1090E484F2EF71630E67B269868320D50095236D8892540A53B17847326FE56
+Match: True
+```
+
+This establishes that the exact intended candidate image was physically programmed and read back without a detected byte difference before the first normal boot.
+
+Status at this point:
+
+```text
+WRITE_COMPLETED: YES
+FULL_PREBOOT_READBACK: YES
+PREBOOT_BINARY_MATCH: YES
+FIRST_NORMAL_BOOT: PENDING
 ```
 
 ## CRITICAL: use the target port, not the donor port
 
-The DOIT-like donor was captured on `COM24`. The characterized AT target was previously on `COM23`. Do **not** reuse a `$Port` variable that still points to `COM24`.
+The DOIT-like donor was captured on `COM24`. The characterized AT target was previously on `COM23`. Do **not** reuse a donor-port variable for recovery or post-boot work.
 
-Set a separate target variable. If Windows still assigns the AT target to COM23:
-
-```powershell
-$TargetPort = "COM23"
-```
-
-If the port changed, substitute the actual AT-target port.
-
-Put the **AT target** into ROM programming/download mode and verify identity:
-
-```powershell
-py -m esptool --chip esp8266 --port $TargetPort --before no-reset chip-id
-```
-
-Proceed only if the connected device is exactly:
+The target identity is:
 
 ```text
 Chip type: ESP8285N08
@@ -58,92 +60,9 @@ MAC:       7c:87:ce:9f:7c:3c
 Chip ID:   0x009f7c3c
 ```
 
-If the MAC/chip ID differs, STOP. Do not write anything.
-
-## Make a fresh rollback dump immediately before writing
-
-A fresh backup is preferred even though an older valid target backup already exists:
-
-```powershell
-$Rollback = "local-backups\esp8285n08_at-1.1.0.0_sdk-1.5.4_1MiB_chip-009f7c3c_pre-transplant_2026-08-16_fullflash.bin"
-
-py -m esptool --chip esp8266 --port $TargetPort --before no-reset --after no-reset read-flash 0 ALL $Rollback
-
-(Get-Item $Rollback).Length
-(Get-FileHash $Rollback -Algorithm SHA256).Hash
-py tools\verify_at_reference_backup.py $Rollback
-```
-
-Proceed only if the rollback file is 1048576 bytes and the verifier reports either:
-
-```text
-RESULT: EXACT_REFERENCE
-```
-
-or:
-
-```text
-RESULT: SAME_AT_FIRMWARE_MUTABLE_STATE_DIFFERS
-```
-
-Keep this rollback image private under `local-backups/`.
-
-## First write
-
-The first experiment writes the complete sanitized 1 MiB candidate so old AT configuration sectors cannot interfere with the RTOS SDK layout.
-
-Use `--after no-reset` so esptool does not intentionally start the newly written firmware before the explicit read-back check:
-
-```powershell
-py -m esptool `
-  --chip esp8266 `
-  --port $TargetPort `
-  --before no-reset `
-  --after no-reset `
-  write-flash 0x000000 $Candidate
-```
-
-Do not run a separate `erase-flash`; `write-flash` erases affected 4 KiB sectors as required.
-
-With esptool v5, successful `write-flash` automatically verifies written data when technically feasible, so a legacy `--verify` option is not required.
-
-## Read-back verification before normal boot
-
-Keep the module in programming mode. Read all 1 MiB back before the first intentional normal boot:
-
-```powershell
-$Verify = "local-backups\doit-v3-like-webui\target-chip-009f7c3c_postwrite_verify.bin"
-
-py -m esptool `
-  --chip esp8266 `
-  --port $TargetPort `
-  --before no-reset `
-  --after no-reset `
-  read-flash 0 ALL $Verify
-```
-
-Compare hashes:
-
-```powershell
-$CandidateHash = (Get-FileHash $Candidate -Algorithm SHA256).Hash
-$VerifyHash = (Get-FileHash $Verify -Algorithm SHA256).Hash
-
-"Candidate: $CandidateHash"
-"Read-back: $VerifyHash"
-"Match: $($CandidateHash -eq $VerifyHash)"
-```
-
-Required result before first normal boot:
-
-```text
-Match: True
-```
-
-If it is false, STOP and restore `$Rollback`.
-
 ## First normal boot
 
-After a matching read-back:
+After the verified matching read-back:
 
 1. remove the GPIO0/programming-mode condition;
 2. reset or power-cycle normally;
@@ -154,11 +73,13 @@ The full 1 MiB SHA-256 is expected to change after normal boot because `0xFB000-
 Initial checks:
 
 1. Look for a Wi-Fi AP.
-2. Expected application-level configuration includes `Doit_WiFi`, `192.168.4.1`, UART 9600 8N1, TCP Server port 9000, and 50 ms serial split timeout.
-3. Open `http://192.168.4.1` if the AP appears.
-4. Confirm `SW Version v3.2.1 / HD Version v1.0`.
-5. Confirm the target identity was regenerated/retained correctly and the donor suffix `C3B3B2` was not inherited.
-6. Test TCP Server port 9000 only after the Web UI is responsive.
+2. Record the exact AP SSID that appears; do not assume whether the firmware uses the plain `Doit_WiFi` name or regenerates a MAC-derived suffix.
+3. Connect to the AP and check `192.168.4.1`.
+4. Open the Web UI and confirm `SW Version v3.2.1 / HD Version v1.0`.
+5. Record the MAC displayed by the Web UI. For this target, the expected application identity is `7C-87-CE-9F-7C-3C`, not donor `E0-98-06-C3-B3-B2`.
+6. Confirm the visible UART configuration: 9600, 8 data bits, no parity, 1 stop bit, 50 ms serial split timeout.
+7. Confirm TCP Server mode and local port 9000.
+8. Test TCP Server port 9000 only after the Web UI is responsive.
 
 ## Post-boot capture
 
@@ -171,7 +92,14 @@ py -m esptool --chip esp8266 --port $TargetPort --before no-reset read-flash 0 A
 py tools\flash_layout_scan.py $PostBoot
 ```
 
-The post-boot image should differ from the candidate primarily in mutable SDK/state areas. Analyze it before declaring the conversion complete.
+Also record its hash:
+
+```powershell
+(Get-Item $PostBoot).Length
+(Get-FileHash $PostBoot -Algorithm SHA256).Hash
+```
+
+The post-boot image should differ from the candidate in mutable RF/SDK state. It should be analyzed before the conversion is declared fully characterized.
 
 ## Rollback
 
@@ -209,9 +137,12 @@ Require `Match: True`, then remove programming mode and normal-boot the restored
 CANDIDATE_REPRODUCIBLE: YES
 TARGET_FIRMWARE_GATE: PASSED
 TARGET_PAYLOAD_MATCH: YES
-FRESH_ROLLBACK_CAPTURE: REQUIRED BEFORE WRITE
-WRITE_TESTED_ON_TARGET: NO
+ROLLBACK_AVAILABLE: YES
+WRITE_TESTED_ON_TARGET: YES
+PREBOOT_READBACK_MATCH: YES
 FIRST_BOOT_TESTED: NO
+WEB_UI_TESTED: NO
+TCP_SERVER_TESTED: NO
 ```
 
-Successful flashing alone is not proof of functional compatibility. The decisive evidence is successful first boot, RF/Wi-Fi initialization, Web UI operation, target identity, and UART/TCP behavior.
+The write stage is now verified. Functional compatibility is established only after normal boot, RF/Wi-Fi initialization, Web UI operation, target identity validation, and UART/TCP behavior tests.
