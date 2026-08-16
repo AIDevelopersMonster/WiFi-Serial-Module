@@ -1,0 +1,3 @@
+# Local hardware captures and raw firmware backups may contain credentials/configuration.
+local-backups/
+*.bin
