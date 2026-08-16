@@ -59,16 +59,55 @@ Most importantly, the Web UI reports the **target** identity `7C-87-CE-9F-7C-3C`
 
 The accessible Web UI at `192.168.4.1` also demonstrates that the target successfully reached normal firmware execution and brought up the SoftAP/HTTP path after starting with blanked RF-calibration and SDK-parameter sectors.
 
-Status at this point:
+## Post-first-boot Flash capture
+
+After the successful normal boot, a new full 1 MiB Flash dump was captured from the converted target:
 
 ```text
-WRITE_COMPLETED: YES
-FULL_PREBOOT_READBACK: YES
-PREBOOT_BINARY_MATCH: YES
-FIRST_NORMAL_BOOT: YES
-SOFTAP_OPERATIONAL: YES
-HTTP_WEB_UI_OPERATIONAL: YES
-TARGET_MAC_IN_WEB_UI: YES
+File: local-backups\doit-v3-like-webui\target-chip-009f7c3c_after-first-boot.bin
+Size: 1048576 bytes (0x100000)
+SHA256: 19428502A2C164B7B43B1A6664906CBD44EEE07A10673ECC9F8070A261C85C5F
+```
+
+`tools/flash_layout_scan.py` reported the same validated initial image structure as the pre-boot candidate:
+
+```text
+magic: 0xE9
+segments: 3
+SPI mode: DOUT
+flash size: 1MB
+SPI frequency: 40MHz
+entry point: 0x40100004
+segment 0 length: 0x7508
+segment 1 length: 0x085C
+segment 2 length: 0x2470
+checksum stored/calculated: 0x0A / 0x0A
+checksum match: True
+```
+
+Post-boot non-erased sector runs:
+
+```text
+0x000000-0x00AFFF: 11 sectors, 40316 non-FF bytes
+0x01D000-0x01EFFF: 2 sectors, 204 non-FF bytes
+0x020000-0x068FFF: 73 sectors, 290305 non-FF bytes
+0x0FB000-0x0FFFFF: 5 sectors, 936 non-FF bytes
+```
+
+The sector-level shape is therefore exactly where expected after first boot: the firmware/application regions remain structurally unchanged and the RTOS SDK tail `0xFB000-0xFFFFF` is populated with target runtime state.
+
+A separate byte-level comparator `tools/compare_doit_postboot.py` was added to prove whether *all* differences from the sanitized candidate are confined to that SDK tail. Until that comparator is run, the claim remains structural rather than byte-for-byte for the pre-tail regions.
+
+Run:
+
+```powershell
+py tools\compare_doit_postboot.py $Candidate $PostBoot
+```
+
+The desired result is:
+
+```text
+RESULT: ONLY_RF_SDK_TAIL_CHANGED
 ```
 
 ## Target identity
@@ -94,40 +133,9 @@ The conversion has booted successfully, but these items should still be checked 
 5. Connect to TCP port 9000 and verify bidirectional UART data.
 6. Reboot/power-cycle several times and confirm configuration persistence and reliable Wi-Fi startup.
 
-## Post-boot capture
-
-After the successful first boot, return the target to programming mode and capture its newly generated RF/SDK state:
-
-```powershell
-$PostBoot = "local-backups\doit-v3-like-webui\target-chip-009f7c3c_after-first-boot.bin"
-
-py -m esptool --chip esp8266 --port $TargetPort --before no-reset read-flash 0 ALL $PostBoot
-py tools\flash_layout_scan.py $PostBoot
-```
-
-Also record its hash:
-
-```powershell
-(Get-Item $PostBoot).Length
-(Get-FileHash $PostBoot -Algorithm SHA256).Hash
-```
-
-The post-boot image is expected to differ from the candidate because the RTOS SDK has now had an opportunity to create target-specific RF calibration and system parameters. This comparison is the next structural validation step.
-
 ## Rollback
 
-A fresh pre-transplant AT backup remains the rollback path. If later functional testing exposes a problem, place the target back into ROM programming mode and restore that image:
-
-```powershell
-py -m esptool `
-  --chip esp8266 `
-  --port $TargetPort `
-  --before no-reset `
-  --after no-reset `
-  write-flash 0x000000 $Rollback
-```
-
-Read it back before normal boot and require an exact hash match.
+A fresh pre-transplant AT backup remains the rollback path. If later functional testing exposes a problem, place the target back into ROM programming mode and restore that image.
 
 ## Experiment status
 
@@ -142,9 +150,11 @@ FIRST_BOOT_TESTED: YES
 SOFTAP_TESTED: YES
 WEB_UI_TESTED: YES
 TARGET_IDENTITY_PRESERVED: YES
+POST_BOOT_CAPTURED: YES
+POST_BOOT_LAYOUT_VALID: YES
+POST_BOOT_BYTE_DIFF_AUDIT: PENDING
 TCP_SERVER_TESTED: PENDING
 UART_DATA_PATH_TESTED: PENDING
-POST_BOOT_FLASH_ANALYZED: PENDING
 ```
 
-The central transplant hypothesis is now experimentally supported: the DOIT V3-like SW v3.2.1 firmware can boot and expose its Web UI on the previously characterized ESP8285N08 AT 1.1 hardware after donor-specific state is sanitized.
+The central transplant hypothesis is experimentally supported: the DOIT V3-like SW v3.2.1 firmware boots and exposes its Web UI on the previously characterized ESP8285N08 AT 1.1 hardware after donor-specific state is sanitized.
