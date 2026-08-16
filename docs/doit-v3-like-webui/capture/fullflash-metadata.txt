@@ -1,0 +1,6 @@
+﻿Firmware profile: DOIT V3-like Web UI
+Observed SW version: v3.2.1
+Observed HD version: v1.0
+Dump filename: doit-v3-like_sw-v3.2.1_hd-v1.0_fullflash.bin
+Size: 0 bytes
+SHA256: 

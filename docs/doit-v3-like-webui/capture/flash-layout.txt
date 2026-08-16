@@ -1,0 +1,25 @@
+﻿File: local-backups\doit-v3-like-webui\esp8285n08_doit-v3-like_sw-v3.2.1_hd-v1.0_1MiB_chip-00c3b3b2_fullflash.bin
+Size: 1048576 bytes (0x100000)
+SHA256: 81860AA052ECF5B888C6E128F2C4D15AC5DA1990DD69E45732F963B234EAB541
+
+Legacy image @ 0x000000:
+  magic: 0xE9
+  segments: 3
+  SPI mode: DOUT (3)
+  declared flash size: 1MB
+  SPI flash frequency: 40MHz
+  entry point: 0x40100004
+  segment 0: file=0x000010 load=0x40100000 length=0x7508
+  segment 1: file=0x007520 load=0x3FFE8000 length=0x85C
+  segment 2: file=0x007D84 load=0x3FFE8860 length=0x2470
+  segment data end: 0x00A1F4
+  checksum @ 0x00A1FF: stored=0x0A calculated=0x0A match=True
+
+Non-erased 4096-byte sector runs:
+  0x000000-0x00AFFF: 11 sectors, 40316 non-FF bytes
+  0x01D000-0x01EFFF: 2 sectors, 204 non-FF bytes
+  0x020000-0x068FFF: 73 sectors, 290305 non-FF bytes
+  0x0FB000-0x0FFFFF: 5 sectors, 1147 non-FF bytes
+
+Selected markers:
+  'ESP_%02X%02X%02X': 0x045E20

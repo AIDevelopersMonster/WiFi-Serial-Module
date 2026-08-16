@@ -1,0 +1,15 @@
+﻿esptool v5.3.1
+Serial port COM24:
+Note: Pre-connection option "no-reset" was selected. Connection may fail if the chip is not in bootloader or flasher stub mode.
+Connecting...
+Connected to ESP8266 on COM24:
+Chip type:          ESP8285N08
+Features:           Wi-Fi, 160MHz, Embedded Flash
+Crystal frequency:  26MHz
+MAC:                e0:98:06:c3:b3:b2
+
+Stub flasher is already running. No upload is necessary.
+
+Chip ID: 0x00c3b3b2
+
+Hard resetting via RTS pin...
