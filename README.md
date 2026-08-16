@@ -30,6 +30,22 @@ The project does **not** assume that every physically similar module has the sam
 - [`docs/doit-v3.md`](docs/doit-v3.md) — DOIT transparent V3 firmware properties and factory defaults.
 - [`docs/espressif-at-1.1.md`](docs/espressif-at-1.1.md) — observed Espressif AT 1.1.0.0 module and relevant capabilities.
 - [`docs/pairing.md`](docs/pairing.md) — how to build a module-to-module transparent UART link.
+- [`tools/README.md`](tools/README.md) — command-line utilities and separately marked **Windows** / **Linux** examples.
+
+## Command-line tools
+
+The repository includes:
+
+```text
+tools/
+  detect_module.py
+  serial_console.py
+  tcp_console.py
+  uart_loopback_test.py
+  latency_test.py
+```
+
+Install the UART dependency with `py -m pip install -r requirements.txt` on Windows or `python3 -m pip install -r requirements.txt` on Linux. See [`tools/README.md`](tools/README.md) for usage.
 
 ## UART wiring
 
