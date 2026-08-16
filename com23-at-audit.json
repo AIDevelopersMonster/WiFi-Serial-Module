@@ -1,0 +1,328 @@
+{
+  "port": "COM23",
+  "baud": 115200,
+  "probe_policy": "read-only/state-preserving",
+  "results": [
+    {
+      "name": "AT",
+      "command": "AT",
+      "group": "basic",
+      "status": "SUPPORTED",
+      "response": "OK",
+      "note": "startup test"
+    },
+    {
+      "name": "GMR",
+      "command": "AT+GMR",
+      "group": "basic",
+      "status": "SUPPORTED",
+      "response": "AT version:1.1.0.0(May 11 2016 18:09:56)\nSDK version:1.5.4(baaeaebb)\ncompile time:May 20 2016 15:08:19\nOK",
+      "note": "firmware/SDK version"
+    },
+    {
+      "name": "UART_CUR",
+      "command": "AT+UART_CUR?",
+      "group": "basic",
+      "status": "ERROR_OR_STATE_DEPENDENT",
+      "response": "ERROR",
+      "note": "current UART configuration"
+    },
+    {
+      "name": "UART_DEF",
+      "command": "AT+UART_DEF?",
+      "group": "basic",
+      "status": "ERROR_OR_STATE_DEPENDENT",
+      "response": "ERROR",
+      "note": "default UART configuration"
+    },
+    {
+      "name": "SLEEP",
+      "command": "AT+SLEEP?",
+      "group": "basic",
+      "status": "SUPPORTED",
+      "response": "+SLEEP:2\nOK",
+      "note": "current sleep mode"
+    },
+    {
+      "name": "RFPOWER",
+      "command": "AT+RFPOWER?",
+      "group": "basic",
+      "status": "ERROR_OR_STATE_DEPENDENT",
+      "response": "ERROR",
+      "note": "RF power query if supported by build"
+    },
+    {
+      "name": "CWMODE_CUR",
+      "command": "AT+CWMODE_CUR?",
+      "group": "wifi",
+      "status": "SUPPORTED",
+      "response": "+CWMODE_CUR:2\nOK",
+      "note": "current Wi-Fi mode"
+    },
+    {
+      "name": "CWMODE_DEF",
+      "command": "AT+CWMODE_DEF?",
+      "group": "wifi",
+      "status": "SUPPORTED",
+      "response": "+CWMODE_DEF:2\nOK",
+      "note": "default Wi-Fi mode"
+    },
+    {
+      "name": "CWJAP_CUR",
+      "command": "AT+CWJAP_CUR?",
+      "group": "wifi",
+      "status": "SUPPORTED",
+      "response": "No AP\nOK",
+      "note": "current associated AP"
+    },
+    {
+      "name": "CWJAP_DEF",
+      "command": "AT+CWJAP_DEF?",
+      "group": "wifi",
+      "status": "SUPPORTED",
+      "response": "No AP\nOK",
+      "note": "saved associated AP"
+    },
+    {
+      "name": "CWLAPOPT",
+      "command": "AT+CWLAPOPT?",
+      "group": "wifi",
+      "status": "ERROR_OR_STATE_DEPENDENT",
+      "response": "ERROR",
+      "note": "scan output configuration; may be unsupported as query"
+    },
+    {
+      "name": "CWLIF",
+      "command": "AT+CWLIF",
+      "group": "wifi",
+      "status": "SUPPORTED",
+      "response": "OK",
+      "note": "stations connected to softAP; mode-dependent"
+    },
+    {
+      "name": "CWSAP_CUR",
+      "command": "AT+CWSAP_CUR?",
+      "group": "wifi",
+      "status": "SUPPORTED",
+      "response": "+CWSAP_CUR:\"ESP_9F7C3C\",\"\",1,0,4,0\nOK",
+      "note": "current softAP configuration"
+    },
+    {
+      "name": "CWSAP_DEF",
+      "command": "AT+CWSAP_DEF?",
+      "group": "wifi",
+      "status": "SUPPORTED",
+      "response": "+CWSAP_DEF:\"ESP_9F7C3C\",\"\",1,0,8,0\nOK",
+      "note": "default softAP configuration"
+    },
+    {
+      "name": "CWDHCP_CUR",
+      "command": "AT+CWDHCP_CUR?",
+      "group": "wifi",
+      "status": "SUPPORTED",
+      "response": "+CWDHCP_CUR:3\nOK",
+      "note": "current DHCP configuration"
+    },
+    {
+      "name": "CWDHCP_DEF",
+      "command": "AT+CWDHCP_DEF?",
+      "group": "wifi",
+      "status": "SUPPORTED",
+      "response": "+CWDHCP_DEF:3\nOK",
+      "note": "default DHCP configuration"
+    },
+    {
+      "name": "CWDHCPS_CUR",
+      "command": "AT+CWDHCPS_CUR?",
+      "group": "wifi",
+      "status": "SUPPORTED",
+      "response": "+CWDHCPS_CUR:120,192.168.4.2,192.168.4.101\nOK",
+      "note": "current softAP DHCP range"
+    },
+    {
+      "name": "CWDHCPS_DEF",
+      "command": "AT+CWDHCPS_DEF?",
+      "group": "wifi",
+      "status": "SUPPORTED",
+      "response": "+CWDHCPS_DEF:0,0.0.0.0,0.0.0.0\nOK",
+      "note": "saved softAP DHCP range"
+    },
+    {
+      "name": "CIPSTAMAC_CUR",
+      "command": "AT+CIPSTAMAC_CUR?",
+      "group": "wifi",
+      "status": "SUPPORTED",
+      "response": "+CIPSTAMAC_CUR:\"7c:87:ce:9f:7c:3c\"\nOK",
+      "note": "current station MAC"
+    },
+    {
+      "name": "CIPSTAMAC_DEF",
+      "command": "AT+CIPSTAMAC_DEF?",
+      "group": "wifi",
+      "status": "SUPPORTED",
+      "response": "+CIPSTAMAC_DEF:\"ff:ff:ff:ff:ff:ff\"\nOK",
+      "note": "default station MAC"
+    },
+    {
+      "name": "CIPAPMAC_CUR",
+      "command": "AT+CIPAPMAC_CUR?",
+      "group": "wifi",
+      "status": "SUPPORTED",
+      "response": "+CIPAPMAC_CUR:\"7e:87:ce:9f:7c:3c\"\nOK",
+      "note": "current softAP MAC"
+    },
+    {
+      "name": "CIPAPMAC_DEF",
+      "command": "AT+CIPAPMAC_DEF?",
+      "group": "wifi",
+      "status": "SUPPORTED",
+      "response": "+CIPAPMAC_DEF:\"ff:ff:ff:ff:ff:ff\"\nOK",
+      "note": "default softAP MAC"
+    },
+    {
+      "name": "CIPSTA_CUR",
+      "command": "AT+CIPSTA_CUR?",
+      "group": "wifi",
+      "status": "SUPPORTED",
+      "response": "+CIPSTA_CUR:ip:\"0.0.0.0\"\n+CIPSTA_CUR:gateway:\"0.0.0.0\"\n+CIPSTA_CUR:netmask:\"0.0.0.0\"\nOK",
+      "note": "current station IP/gateway/netmask"
+    },
+    {
+      "name": "CIPSTA_DEF",
+      "command": "AT+CIPSTA_DEF?",
+      "group": "wifi",
+      "status": "SUPPORTED",
+      "response": "+CIPSTA_DEF:ip:\"0.0.0.0\"\n+CIPSTA_DEF:gateway:\"0.0.0.0\"\n+CIPSTA_DEF:netmask:\"0.0.0.0\"\nOK",
+      "note": "saved station IP/gateway/netmask"
+    },
+    {
+      "name": "CIPAP_CUR",
+      "command": "AT+CIPAP_CUR?",
+      "group": "wifi",
+      "status": "SUPPORTED",
+      "response": "+CIPAP_CUR:ip:\"192.168.4.1\"\n+CIPAP_CUR:gateway:\"192.168.4.1\"\n+CIPAP_CUR:netmask:\"255.255.255.0\"\nOK",
+      "note": "current softAP IP/gateway/netmask"
+    },
+    {
+      "name": "CIPAP_DEF",
+      "command": "AT+CIPAP_DEF?",
+      "group": "wifi",
+      "status": "SUPPORTED",
+      "response": "+CIPAP_DEF:ip:\"0.0.0.0\"\n+CIPAP_DEF:gateway:\"0.0.0.0\"\n+CIPAP_DEF:netmask:\"0.0.0.0\"\nOK",
+      "note": "saved softAP IP/gateway/netmask"
+    },
+    {
+      "name": "CIPSTATUS",
+      "command": "AT+CIPSTATUS",
+      "group": "tcpip",
+      "status": "SUPPORTED",
+      "response": "STATUS:5\nOK",
+      "note": "network connection status"
+    },
+    {
+      "name": "CIFSR",
+      "command": "AT+CIFSR",
+      "group": "tcpip",
+      "status": "SUPPORTED",
+      "response": "+CIFSR:APIP,\"192.168.4.1\"\n+CIFSR:APMAC,\"7e:87:ce:9f:7c:3c\"\nOK",
+      "note": "local IP and MAC information"
+    },
+    {
+      "name": "CIPMUX",
+      "command": "AT+CIPMUX?",
+      "group": "tcpip",
+      "status": "SUPPORTED",
+      "response": "+CIPMUX:0\nOK",
+      "note": "single/multiple connection mode"
+    },
+    {
+      "name": "CIPMODE",
+      "command": "AT+CIPMODE?",
+      "group": "tcpip",
+      "status": "SUPPORTED",
+      "response": "+CIPMODE:0\nOK",
+      "note": "normal/transparent transmission mode"
+    },
+    {
+      "name": "CIPSTO",
+      "command": "AT+CIPSTO?",
+      "group": "tcpip",
+      "status": "SUPPORTED",
+      "response": "+CIPSTO:180\nOK",
+      "note": "TCP server timeout; state-dependent"
+    },
+    {
+      "name": "CIPDINFO",
+      "command": "AT+CIPDINFO?",
+      "group": "tcpip",
+      "status": "SUPPORTED",
+      "response": "+CIPDINFO:FALSE\nOK",
+      "note": "whether +IPD includes remote IP/port"
+    }
+  ],
+  "not_auto_executed": [
+    "AT+RST",
+    "AT+GSLP",
+    "ATE0/ATE1",
+    "AT+RESTORE",
+    "AT+UART",
+    "AT+UART_DEF(set)",
+    "AT+SLEEP(set)",
+    "AT+RFPOWER(set)",
+    "AT+RFVDD",
+    "AT+CWMODE",
+    "AT+CWMODE_CUR(set)",
+    "AT+CWMODE_DEF(set)",
+    "AT+CWJAP",
+    "AT+CWJAP_CUR(set)",
+    "AT+CWJAP_DEF(set)",
+    "AT+CWLAPOPT(set)",
+    "AT+CWLAP",
+    "AT+CWQAP",
+    "AT+CWSAP",
+    "AT+CWSAP_CUR(set)",
+    "AT+CWSAP_DEF(set)",
+    "AT+CWDHCP",
+    "AT+CWDHCP_CUR(set)",
+    "AT+CWDHCP_DEF(set)",
+    "AT+CWDHCPS_CUR(set)",
+    "AT+CWDHCPS_DEF(set)",
+    "AT+CWAUTOCONN(set)",
+    "AT+CIPSTAMAC",
+    "AT+CIPSTAMAC_CUR(set)",
+    "AT+CIPSTAMAC_DEF(set)",
+    "AT+CIPAPMAC",
+    "AT+CIPAPMAC_CUR(set)",
+    "AT+CIPAPMAC_DEF(set)",
+    "AT+CIPSTA",
+    "AT+CIPSTA_CUR(set)",
+    "AT+CIPSTA_DEF(set)",
+    "AT+CIPAP",
+    "AT+CIPAP_CUR(set)",
+    "AT+CIPAP_DEF(set)",
+    "AT+CWSTARTSMART",
+    "AT+CWSTOPSMART",
+    "AT+CWSTARTDISCOVER",
+    "AT+CWSTOPDISCOVER",
+    "AT+WPS",
+    "AT+MDNS",
+    "AT+CIPDOMAIN",
+    "AT+CIPSTART",
+    "AT+CIPSSLSIZE",
+    "AT+CIPSEND",
+    "AT+CIPSENDEX",
+    "AT+CIPSENDBUF",
+    "AT+CIPBUFSTATUS",
+    "AT+CIPCHECKSEQ",
+    "AT+CIPBUFRESET",
+    "AT+CIPCLOSE",
+    "AT+CIPMUX(set)",
+    "AT+CIPSERVER",
+    "AT+CIPMODE(set)",
+    "AT+SAVETRANSLINK",
+    "AT+CIPSTO(set)",
+    "AT+PING",
+    "AT+CIUPDATE",
+    "AT+CIPDINFO(set)"
+  ]
+}
