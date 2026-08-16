@@ -65,7 +65,7 @@ Exact non-`0xFF` spans inside those runs are:
 0x0FB000-0x0FF01F
 ```
 
-This shape is strongly consistent with a legacy ESP8266 NONOS non-OTA style image: a small load image at `0x000000`, a separate flash-mapped code region, custom user/configuration sectors, and SDK parameter sectors near the top of the 1 MiB device.
+The layout is consistent with an ESP8266 **RTOS SDK 1.5.0-era** non-OTA image: a small load image at `0x000000`, a separate flash-mapped application region, custom application configuration sectors, and the SDK's five reserved tail sectors.
 
 ## Strong firmware identity markers
 
@@ -156,19 +156,41 @@ The following values can be correlated directly with the Web UI configuration in
 
 This correspondence independently ties the saved Flash state to the visible Web UI settings.
 
-## Device-specific state near the end of Flash
+## RTOS SDK tail sectors at 0x0FB000-0x0FFFFF
 
-The final five sectors `0x0FB000-0x0FFFFF` are populated. For a 1 MiB ESP8266 NONOS non-OTA layout, Espressif documents a 4 KiB RF calibration area, 4 KiB default-parameter area, and 12 KiB system-parameter area at the end of Flash; together these occupy five sectors.
+The DOIT image identifies itself as ESP8266 **RTOS SDK 1.5.0-dev**. The official Espressif RTOS SDK v1.5.0 project template describes the final sectors as `ABCCC`:
 
-The captured DOIT-like image therefore matches the expected footprint of the classic SDK parameter area.
+```text
+A = RF calibration
+B = RF init data
+C = SDK parameters
+```
 
-A particularly important specimen-specific string is present at:
+For a 1 MiB flash (`256` sectors), the template returns `256 - 5 = 251` as the RF-calibration sector. Sector 251 is `0xFB000`, so the complete reserved tail map is:
+
+```text
+0xFB000  RF calibration
+0xFC000  RF init data
+0xFD000  SDK parameters
+0xFE000  SDK parameters
+0xFF000  SDK parameters
+```
+
+The first 128 bytes at `0xFC000` are byte-for-byte identical to Espressif's official `bin/esp_init_data_default.bin` from RTOS SDK v1.5.0. Its SHA-256 is:
+
+```text
+0DA80624EFA6159BBF30141B6E978A17BED80D8F5505C4BBFB75D49F496ECB83
+```
+
+The same 128-byte initialization blob is also present at `0xFC000` in the project's AT 1.1 reference dump, although that reference application itself uses NONOS SDK 1.5.4.
+
+A specimen-specific string is present in the DOIT SDK parameter area:
 
 ```text
 0x0FD0B4  Doit_WiFi_C3B3B2
 ```
 
-The suffix matches this unit's MAC/chip-ID suffix. This proves that the raw full-Flash image contains device-specific state, not only generic firmware.
+The raw donor MAC also appears in the SDK parameter copies around `0xFD484` and `0xFE484`. This proves that a full donor image contains per-device state and should not be cloned blindly onto another physical chip.
 
 ## Consequence for firmware transplantation
 
@@ -183,10 +205,13 @@ However, **blindly cloning the complete 1 MiB donor dump is not the preferred fi
 
 - donor MAC copies in the application configuration area;
 - donor-derived SSID state;
-- SDK RF/default/system parameter sectors;
+- target-specific RF calibration;
+- donor SDK/Wi-Fi system parameters;
 - current Web UI and network configuration.
 
-The next engineering step is therefore to identify the minimal generic firmware regions and the required initialization/default sectors, while preserving or regenerating target-specific state.
+A safer experimental candidate keeps the DOIT application/code/configuration, replaces the two application-level donor MAC copies with the target MAC, erases `0xFB000` so RF calibration is not transplanted, preserves only the verified generic 128-byte RF init data at `0xFC000`, and erases the three SDK-parameter sectors `0xFD000-0xFFFFF`.
+
+See [`transplant-plan.md`](transplant-plan.md) and [`../../tools/build_doit_transplant_image.py`](../../tools/build_doit_transplant_image.py).
 
 ## Comparison with the ESP8285N08 AT 1.1 reference
 
@@ -242,6 +267,8 @@ DOIT V3-like:
 
 The largest architectural difference is the flash-mapped application region: the AT reference starts at `0x010000`, while the DOIT-like firmware starts at `0x020000`.
 
+A same-offset binary comparison is not very informative because the layouts differ: 62.1% of the complete 1 MiB images match byte-for-byte mostly due to erased `0xFF` space. Comparing the AT application at `0x10000` against the DOIT application shifted to `0x20000` yields only about 1.6% identical bytes. Therefore these are genuinely different application builds, not the same firmware relocated by one sector range.
+
 ### SDK lineage
 
 The AT reference identifies itself as:
@@ -256,18 +283,19 @@ The DOIT-like dump contains:
 OS SDK ver: 1.5.0-dev(950076a) compiled @ Nov  4 2016 19:29:32
 ```
 
-The two images also share many low-level ESP8266 SDK/RF/network diagnostic strings, so they clearly belong to the same general NONOS-era software ecosystem even though their application layers and exact SDK builds differ.
+The DOIT strings and FreeRTOS/task-oriented implementation identify it with the ESP8266 **RTOS SDK 1.5.0-era** lineage, while the AT reference is a **NONOS SDK 1.5.4** application. They share low-level ESP8266 SDK/RF/network components but are not the same SDK/application family.
 
 ## Current conclusion
 
-Status after full-dump capture:
+Status after full-dump and region analysis:
 
 ```text
 HARDWARE_CLASS_MATCH: STRONG
-FIRMWARE_FAMILY_MATCH: NO - different application firmware
+FIRMWARE_FAMILY_MATCH: NO - RTOS DOIT app vs NONOS AT app
 DOIT_V3_LIKE_IDENTITY: DIRECTLY_CONFIRMED_IN_BINARY
+TAIL_SECTOR_MAP: CONFIRMED AS RTOS SDK ABCCC
 FULL_DUMP_CLONE_READY: NO
-SELECTIVE_TRANSPLANT_RESEARCH: JUSTIFIED
+SANITIZED_TRANSPLANT_CANDIDATE: BUILDABLE, NOT YET BOOT-TESTED
 ```
 
-The next safe task is a region-level transplant plan and boot/config dependency analysis, not an immediate full-dump write.
+The next controlled experiment is to generate and inspect a sanitized candidate image, preserve the target's original full-flash backup, and only then perform a reversible write/boot test on the AT reference specimen.
